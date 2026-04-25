@@ -1,0 +1,72 @@
+#settings
+.settings/
+
+#metadata
+.metadata/
+
+#Debug
+Debug/
+debug/
+Release/
+release
+
+# Prerequisites
+*.d
+
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Linker output
+*.ilk
+*.map
+*.exp
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+*.bin
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# CDT-specific (C/C++ Development Tooling)
+.cproject
+
+# Locally stored "Eclipse launch configurations"
+*.launch
+
+# VSCode
+.vscode
+
+### Eclipse ###
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.loadpath
+.recommenders
