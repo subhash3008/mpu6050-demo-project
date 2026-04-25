@@ -23,12 +23,13 @@ Features:
 main.c
  └── App_Start()
       └── static Application app
-           ├── Led statusLed
-           ├── Queue<ImuData>
-           ├── Mpu6050 driver
+           ├── Led
            ├── BlinkTask
+           ├── LogQueue
+           ├── Logger
+           ├── LoggerTask
+           ├── Imu
            ├── ImuTask
-           └── LoggerTask
 ```
 
 ---
