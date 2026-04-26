@@ -1,8 +1,8 @@
-# STM32 FreeRTOS C++ MPU-6050 Demo
+# STM32 FreeRTOS C++ IMU Demo using MPU-6050
 
 ## Overview
 
-This project demonstrates a clean embedded architecture for **STM32 + C++ + FreeRTOS** using a single static `Application` object.
+This project uses embedded architecture for **STM32 + C++ + FreeRTOS** using a single static `Application` object.
 
 Features:
 
@@ -70,13 +70,18 @@ If diagnostics fail, the system enters **safe mode** and blinks the LED rapidly.
 
 Example UART output:
 
+```text
+[53501][INF] IMU AX=876, AY=-3392, AZ=14236, GX=-284, GY=237, GZ=-60
+[54001][INF] IMU AX=808, AY=-3484, AZ=14348, GX=-261, GY=273, GZ=-43
+```
+
 ---
 
 ## Hardware Requirements
 
-* STM32 board supported by STM32CubeIDE
+* STM32 board supported by STM32CubeIDE (This project uses STM32F446RTE6 Nucleo Board)
 * MPU-6050 module
-* USB/UART serial connection
+* UART serial connection
 * LED connected to configured GPIO pin
 
 ---
@@ -88,6 +93,8 @@ Example UART output:
 Used for MPU-6050 communication.
 
 Typical pins depend on MCU family.
+
+In this Project: SDA Pin - PB8, SCL Pin - PB9
 
 ### USART2
 
@@ -102,7 +109,7 @@ Recommended terminal settings:
 
 ### GPIO
 
-Status LED configured as output push-pull.
+User LED configured as output.
 
 ---
 

@@ -1,12 +1,40 @@
+/**
+ * @file ImuTask.cpp
+ * @author Subhash Chandra
+ * @brief Implements task function and associated functionality for IMU
+ * @version 0.1
+ * @date 2026-04-26
+ * 
+ * @copyright Copyright (c) 2026
+ * 
+ */
+
+/***************************************************
+* INCLUDES
+***************************************************/
 #include "ImuTask.hpp"
 
+/***************************************************
+* MEMBER FUNCTIONS
+***************************************************/
+
+/**
+ * @brief Constructor for ImuTask that takes references to an ImuSensor and a Logger,
+ *        initializing its member references mps_Imu and ms_Logger with those arguments.
+ * 
+ * @param aps_Imu     IMU Driver reference
+ * @param aps_Logger  Logger reference
+ */
 ImuTask::
-// ImuTask(ImuSensor& aps_Imu, Queue<ImuData, 16>& aps_DataQueue, )
-// : mps_Imu(aps_Imu), mps_DataQueue(aps_DataQueue)
 ImuTask(ImuSensor& aps_Imu, Logger& aps_Logger)
 : mps_Imu(aps_Imu), ms_Logger(aps_Logger)
 {}
 
+
+/**
+ * @brief Overridden task entry point that periodically reads IMU register data, processes
+ *        the logs the accelerometer and gyroscope values if the read succeeds.
+ */
 void ImuTask::
 run()
 {
