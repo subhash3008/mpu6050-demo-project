@@ -1,5 +1,5 @@
 /**
- * @file Logger.hpp
+ * @file LoggerDriver.hpp
  * @author Subhash Chandra
  * @brief Header file for logger driver
  * @version 0.1
@@ -17,17 +17,17 @@
 #include <cstdarg>
 
 /**
- * @brief Logging utility that sends formatted log messages at various severity
+ * @brief Logging driver that sends formatted log messages at various severity
  *        levels (info, warn, error, debug) into a Queue<LogMessage, 16> provided
  *        at construction, with a separate infoFromISR method for ISR-safe logging
  *        and a private send helper that formats the payload.
  */
-class Logger
+class LoggerDriver
 {
 public:
-  // Constructor that explicitly initializes a Logger instance with a reference to
+  // Constructor that explicitly initializes a LoggerDriver instance with a reference to
   // a LogMessage Queue.
-  explicit Logger(Queue<LogMessage, 16>& aps_Queue);
+  explicit LoggerDriver(Queue<LogMessage, 16>& aps_Queue);
 
   // Function to process info messages
   void info(const char* apc_Fmt, ...);

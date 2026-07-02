@@ -34,19 +34,29 @@ main.c
 
 ---
 
-## Boot Flow
+## Naming Convention
 
-```text
-HAL_Init()
-SystemClock_Config()
-Peripheral Init
-App_Start()
-  -> initDrivers()
-  -> runDiagnostics()
-  -> loadConfiguration()
-  -> startTasks()
-  -> enterNormalMode()
-vTaskStartScheduler()
+### Scope Specifiers
+
+* l  -> for local scope
+* g  -> global scope
+* a  -> arguments
+
+### Type Specifiers
+* i -> integer
+* u -> unsigned integer
+* f -> float
+* p -> pointer
+* r -> reference
+
+
+```code
+uint8_t Foo::
+function(uint8_t au8_Input, uint8_t* apu8_Input2, uint8_t& aru8_Input3)
+{
+  uint8_t lu8_Result = 0U;
+  float lf_FloatVariable = 0.0f;
+}
 ```
 
 If diagnostics fail, the system enters **safe mode** and blinks the LED rapidly.

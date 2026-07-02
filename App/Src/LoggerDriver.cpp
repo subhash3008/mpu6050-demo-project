@@ -1,14 +1,14 @@
 /**
- * @file Logger.cpp
+ * @file LoggerDriver.cpp
  * @author Subhash Chandra
- * @brief Implements Logger utility member and associated functions
+ * @brief Implements LoggerDriver utility member and associated functions
  * @version 0.1
  * @date 2026-04-26
  * 
  * @copyright Copyright (c) 2026
  * 
  */
-#include "Logger.hpp"
+#include "LoggerDriver.hpp"
 #include <cstdio>
 #include <string.h>
 
@@ -16,11 +16,11 @@
 * MEMBER FUNCTIONS
 ***************************************************/
 /**
- * @brief Constructor that initializes a Logger instance by storing reference
+ * @brief Constructor that initializes a LoggerDriver instance by storing reference
  *        to the provided LogMessage Queue in the member queue variaböe.
  */
-Logger::
-Logger(Queue<LogMessage, 16>& aps_Queue)
+LoggerDriver::
+LoggerDriver(Queue<LogMessage, 16>& aps_Queue)
 : ms_Queue(aps_Queue)
 {}
 
@@ -31,7 +31,7 @@ Logger(Queue<LogMessage, 16>& aps_Queue)
  * @param apc_Fmt   Format from variadic function
  * @param args      Arguments for formatting
  */
-void Logger::
+void LoggerDriver::
 send(LogLevel ae_Level,
       const char* apc_Fmt,
       va_list args)
@@ -47,12 +47,12 @@ send(LogLevel ae_Level,
 }
 
 /**
- * @brief Logger member function for processing info severity level
+ * @brief LoggerDriver member function for processing info severity level
  * 
  * @param apc_Fmt printf-style format string
  * @param ...     variadic arguments
  */
-void Logger::
+void LoggerDriver::
 info(const char* apc_Fmt, ...)
 {
   va_list ls_Args;
@@ -62,12 +62,12 @@ info(const char* apc_Fmt, ...)
 }
 
 /**
- * @brief Logger member function for processing warning severity level
+ * @brief LoggerDriver member function for processing warning severity level
  * 
  * @param apc_Fmt printf-style format string
  * @param ...     variadic arguments
  */
-void Logger::
+void LoggerDriver::
 warn(const char* apc_Fmt, ...)
 {
   va_list ls_Args;
@@ -77,12 +77,12 @@ warn(const char* apc_Fmt, ...)
 }
 
 /**
- * @brief Logger member function for processing error severity level
+ * @brief LoggerDriver member function for processing error severity level
  * 
  * @param apc_Fmt printf-style format string
  * @param ...     variadic arguments
  */
-void Logger::
+void LoggerDriver::
 error(const char* apc_Fmt, ...)
 {
   va_list ls_Args;
@@ -92,12 +92,12 @@ error(const char* apc_Fmt, ...)
 }
 
 /**
- * @brief Logger member function for processing debug severity level
+ * @brief LoggerDriver member function for processing debug severity level
  * 
  * @param apc_Fmt printf-style format string
  * @param ...     variadic arguments
  */
-void Logger::
+void LoggerDriver::
 debug(const char* apc_Fmt, ...)
 {
   va_list ls_Args;
@@ -111,7 +111,7 @@ debug(const char* apc_Fmt, ...)
  * 
  * @param apc_Text  Message for logging
  */
-void Logger::
+void LoggerDriver::
 infoFromISR(const char* apc_Text)
 {
   LogMessage ls_Msg;

@@ -1,5 +1,5 @@
 /**
- * @file ImuSensor.hpp
+ * @file ImuSensorDriver.hpp
  * @author Subhash Chandra
  * @brief Header for driver for sensor MPU-6050
  * @version 0.1
@@ -29,19 +29,25 @@ extern "C"
  * @brief Driver class for MPU6050 Sensor
  * 
  */
-class ImuSensor
+class ImuSensorDriver
 {
 public:
-  // Constructor that explicitly initializes an ImuSensor instance
+  // Constructor that explicitly initializes an ImuSensorDriver instance
   // using a reference to an I2C handle.
-  explicit ImuSensor(I2C_HandleTypeDef& aps_HandleI2C);
+  explicit ImuSensorDriver(I2C_HandleTypeDef& aps_HandleI2C);
 
   // Initialize the sensor functionalities
   bool init();
   // Checks the sensor identity
   bool whoAmI(uint8_t& au8_Id);
   // Read data from mpu6050 sensor
-  bool readReg(ImuData& aps_Data);
+  bool readSensorData(ImuDataRaw& aps_Data);
+
+  // convert raw sensor data to g and deg/sec for accelerometer and gyrometer
+  void convertRawValuesToScaledValues(const ImuDataRaw& aps_DataRaw, ImuDataScaled& aps_DataScaled);
+
+  // calibrate the gyro sensor
+  ImuDataGyroBias calibrateGyro(const uint16_t au16_SampleCount);
 
 protected:
   // Writes data to mpu6050 sensor

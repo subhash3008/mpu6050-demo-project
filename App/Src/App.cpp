@@ -122,8 +122,8 @@ runDiagnostics()
 	ms_Logger.info("Testing sensor...");
 	if (true == ok)
 	{
-		ImuData ls_Data{};
-		ok = ms_Imu.readReg(ls_Data);
+		ImuDataRaw ls_Data{};
+		ok = ms_Imu.readSensorData(ls_Data);
 	}
 	
 	// TODO: Check if watchdog reset is present

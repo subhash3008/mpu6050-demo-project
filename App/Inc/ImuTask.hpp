@@ -13,22 +13,22 @@
 
 #include "Task.hpp"
 #include "Queue.hpp"
-#include "ImuSensor.hpp"
-#include "Logger.hpp"
+#include "ImuSensorDriver.hpp"
+#include "LoggerDriver.hpp"
 
 class ImuTask : public Task
 {
 public:
   // Constructor for ImuTask that initializes a new task instance
   // using references to an ImuSensor and a Logger.
-  ImuTask(ImuSensor& aps_Imu, Logger& aps_Logger);
+  ImuTask(ImuSensorDriver& aps_Imu, LoggerDriver& aps_Logger);
 
   // freertos task run function to implement forever loop and functionality
   void run() override;
 
 private:
-  ImuSensor& mps_Imu; // IMU Driver instance
-  Logger& ms_Logger;  // Logger instance to log the data
+  ImuSensorDriver& mps_Imu; // IMU Driver instance
+  LoggerDriver& ms_Logger;  // Logger instance to log the data
 };
 
 #endif // IMU_TASK_HPP

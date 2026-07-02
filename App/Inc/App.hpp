@@ -15,11 +15,11 @@
 #include "Led.hpp"
 #include "BlinkTask.hpp"
 #include "LogMessage.hpp"
-#include "Logger.hpp"
+#include "LoggerDriver.hpp"
 #include "LoggerTask.hpp"
 #include "ImuTask.hpp"
 #include "Queue.hpp"
-#include "ImuSensor.hpp"
+#include "ImuSensorDriver.hpp"
 
 /**
  * @brief Application Class is the overarching class for implementing
@@ -60,9 +60,9 @@ private:
   Led ms_Led; // Led instance to control user led operations
   BlinkTask ms_BlinkTask; // Task used to blink user led
   Queue<LogMessage, 16> ms_LogQueue;  // Message Queue for logging the data over UART
-  Logger ms_Logger; // Driver for handling the incoming logs from tasks
+  LoggerDriver ms_Logger; // Driver for handling the incoming logs from tasks
   LoggerTask ms_LoggerTask; // Task to process the log from the message queue
-  ImuSensor ms_Imu; // Driver instance for IMU sensor
+  ImuSensorDriver ms_Imu; // Driver instance for IMU sensor
   ImuTask ms_ImuTask; // Task to process the data from IMU driver
 };
 
