@@ -19,27 +19,25 @@
 ***************************************************/
 
 // count of samples used for calibration of gyrometer
-static constexpr uint16_t gu16_CalibrationSampleCount = 500U;
+static constexpr uint16_t gu16_CalibrationSampleCount = 100U;
+
+// delay needed between calibration sample collection in ms
+static constexpr uint8_t gu8_CalibrationTimeInterval = 50U;
 
 // delay for ImuTask
 static constexpr uint16_t gu16_ImuTaskDelay = 500U; // TODO: change for needed freq later
+
+// sampling rate of the task - linked to gu16_ImuTaskDelay as 1000 / gu16_ImuTaskDelay
+static constexpr float gf_ImuRateInHz = 2.0f;
+
+// dt is the time between two filter updates
+// since we are using vTaskDelayUntil constant value can be used
+static constexpr float gf_ImuTaskDt = 1.0f / gf_ImuRateInHz;
 
 /***************************************************
 * HELPER FUNCTIONS
 ***************************************************/
 
-/**
- * @brief Removes the bias from the gyrometer measuements
- * 
- * @param as_Data       Measurement data
- * @param as_GyroBias   bias from calibration to be removed
- */
-void removeGyroBias(ImuDataScaled& as_Data, const ImuDataGyroBias as_GyroBias)
-{
-  as_Data.f_GxDps -= as_GyroBias.f_GxBias;
-  as_Data.f_GyDps -= as_GyroBias.f_GyBias;
-  as_Data.f_GzDps -= as_GyroBias.f_GzBias;
-}
 
 /***************************************************
 * MEMBER FUNCTIONS
@@ -70,7 +68,7 @@ run()
   ImuDataScaled ls_DataScaled;
 
   ms_Logger.info("Performing Gyro calibration.");
-  ImuDataGyroBias ls_GyroBias = mps_Imu.calibrateGyro(gu16_CalibrationSampleCount);
+  ImuDataGyroBias ls_GyroBias = mps_Imu.calibrateGyro(gu16_CalibrationSampleCount, gu8_CalibrationTimeInterval);
   ms_Logger.info("Gyro calibration complete.");
 
   while(1)
@@ -79,7 +77,14 @@ run()
     {
       mps_Imu.convertRawValuesToScaledValues(ls_DataRaw, ls_DataScaled);  // convert to desired units, g and deg/sec
 
-      removeGyroBias(ls_DataScaled, ls_GyroBias); // remove bias from scaled data
+      mps_Imu.removeGyroBias(ls_DataScaled, ls_GyroBias); // remove bias from scaled data
+
+      mps_Imu.integrateGyro(ls_DataScaled, gf_ImuTaskDt);
+
+      float lf_PitchAcc = mps_Imu.calculatePitchFromAccel(ls_DataScaled);
+      float lf_RollAcc = mps_Imu.calculateRollFromAccel(ls_DataScaled);
+
+      mps_Imu.applyComplimentaryFilter(ls_DataScaled, lf_PitchAcc, lf_RollAcc);
 
       // ms_Logger.info(
       //   "IMU AX=%d, AY=%d, AZ=%d, GX=%d, GY=%d, GZ=%d",
@@ -88,9 +93,10 @@ run()
       // );
 
       ms_Logger.info(
-        "IMU AX=%.02f, AY=%.02f, AZ=%.02f, GX=%.02f, GY=%.02f, GZ=%.02f",
+        "IMU AX=%.02f, AY=%.02f, AZ=%.02f, GX=%.02f, GY=%.02f, GZ=%.02f, Pitch=%.02f, Roll=%.02f", 
         ls_DataScaled.f_AxG, ls_DataScaled.f_AyG, ls_DataScaled.f_AzG,
-        ls_DataScaled.f_GxDps, ls_DataScaled.f_GyDps, ls_DataScaled.f_GzDps
+        ls_DataScaled.f_GxDps, ls_DataScaled.f_GyDps, ls_DataScaled.f_GzDps,
+        ls_DataScaled.f_PitchDeg, ls_DataScaled.f_RollDeg
       );
     }
 

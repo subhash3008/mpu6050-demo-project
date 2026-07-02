@@ -13,10 +13,17 @@
 * INCLUDES
 ***************************************************/
 #include "ImuSensorDriver.hpp"
+#include <cmath>
 
 /***************************************************
 * Constants
 ***************************************************/
+
+// used for conversion between rad and degree for angles
+static constexpr float RAD_TO_DEG = 57.2957f;
+
+// Tuning weight used for complimentary filter
+static constexpr float ALPHA = 0.96f;
 
 // accelerometer sensitivity (for +-2g) from MPU6050 datasheet: 16384 = 1g
 static constexpr float ACC_SCALE_2G = 16384.0f;
@@ -193,7 +200,7 @@ convertRawValuesToScaledValues(const ImuDataRaw& aps_DataRaw, ImuDataScaled& aps
  * @return ImuDataGyroBias  calculated bias
  */
 ImuDataGyroBias ImuSensorDriver::
-calibrateGyro(const uint16_t au16_SampleCount)
+calibrateGyro(const uint16_t au16_SampleCount, const uint8_t au8_TimeInterval)
 {
   ImuDataRaw ls_Data;
   ImuDataGyroBias ls_Bias;
@@ -211,7 +218,7 @@ calibrateGyro(const uint16_t au16_SampleCount)
       li32_GyAggregate += ls_Data.i16_Gy;
       li32_GzAggregate += ls_Data.i16_Gz;
     }
-    HAL_Delay(10);
+    HAL_Delay(au8_TimeInterval);
   }
 
   // average and scale the data for bias calculation
@@ -220,5 +227,88 @@ calibrateGyro(const uint16_t au16_SampleCount)
   ls_Bias.f_GzBias = (static_cast<float>(li32_GzAggregate) / static_cast<float>(counter)) / GYRO_SCALE_250;
 
   return ls_Bias;
+
+}
+
+
+/**
+ * @brief Removes the bias from the gyrometer measuements
+ * 
+ * @param as_Data       Measurement data
+ * @param as_GyroBias   bias from calibration to be removed
+ */
+void ImuSensorDriver::
+removeGyroBias(ImuDataScaled& as_Data, const ImuDataGyroBias as_GyroBias)
+{
+  as_Data.f_GxDps -= as_GyroBias.f_GxBias;
+  as_Data.f_GyDps -= as_GyroBias.f_GyBias;
+  as_Data.f_GzDps -= as_GyroBias.f_GzBias;
+}
+
+/**
+ * @brief Integrate gyro rates to get gyro angles
+ *        Angle = Angle + Angle Change
+ *        Angle Change = Rate * Time
+ * 
+ * @param as_Data Measurement Data
+ * @param af_Dt   Time difference for task run
+ */
+void ImuSensorDriver::
+integrateGyro(ImuDataScaled& as_Data, const float af_Dt)
+{
+  // Assumption: gx rotates pitch axis, gy rotates roll axis
+  as_Data.f_PitchDeg +=  as_Data.f_GxDps * af_Dt;
+  as_Data.f_RollDeg +=  as_Data.f_GyDps * af_Dt;
+}
+
+/**
+ * @brief Calculate pitch from accelerometer data
+ * @details Pitch is calculated as below
+ *          pitch = atan2(-X, sqrt(Y*Y + Z*Z))
+ * 
+ *          Magnitude of YZ plane i.e. sqrt(Y*Y + Z*Z) improves
+ *          stability when board moves
+ * 
+ * @param as_Data Measurement data 
+ * @return float  Calculated pitch value
+ */
+float ImuSensorDriver::
+calculatePitchFromAccel(const ImuDataScaled& as_Data)
+{
+  float lf_Denominator = std::sqrt((as_Data.f_AyG * as_Data.f_AyG) + (as_Data.f_AzG * as_Data.f_AzG));
+  float lf_AngleRad = std::atan2(-as_Data.f_AxG, lf_Denominator);
+
+  return lf_AngleRad * RAD_TO_DEG; // convert angle to degrees
+}
+
+/**
+ * @brief Calculate roll from accelerometer data
+ *        Roll = atan2(Y, Z)
+ * 
+ * @param as_Data 
+ * @return float 
+ */
+float ImuSensorDriver::
+calculateRollFromAccel(const ImuDataScaled& as_Data)
+{
+  float lf_AngleRad = std::atan2(as_Data.f_AyG, as_Data.f_AzG);
+  
+  return lf_AngleRad * RAD_TO_DEG; // convert angle to degrees
+}
+
+
+/**
+ * @brief Apply fiter for compensating gyro drift and accelerometer noise, refer readme file
+ *        Fused Data = Alpha * Accumulated Data + (1 - Alpha) * Current Data
+ * 
+ * @param as_Data 
+ * @param af_PitchAcc 
+ * @param af_RollAcc 
+ */
+void ImuSensorDriver::
+applyComplimentaryFilter(ImuDataScaled& as_Data, const float af_PitchAcc, const float af_RollAcc)
+{
+  as_Data.f_PitchDeg = ALPHA * as_Data.f_PitchDeg + (1.0f - ALPHA) * af_PitchAcc;
+  as_Data.f_RollDeg = ALPHA * as_Data.f_RollDeg + (1.0f - ALPHA) * af_RollAcc;
 
 }

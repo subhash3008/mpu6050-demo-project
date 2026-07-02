@@ -12,7 +12,7 @@ Features:
 * MPU-6050 accelerometer + gyroscope over I2C
 * UART logger task
 * LED heartbeat task
-* Queue-based inter-task communication
+* Queue-based logging
 * Safe startup / safe mode fallback
 
 ---
@@ -25,10 +25,9 @@ main.c
       └── static Application app
            ├── Led
            ├── BlinkTask
-           ├── LogQueue
-           ├── Logger
+           ├── LoggerDriver
            ├── LoggerTask
-           ├── Imu
+           ├── ImuSensorDriver
            ├── ImuTask
 ```
 
@@ -129,7 +128,31 @@ Current driver behavior:
 
 * Wakes device by clearing sleep bit (`PWR_MGMT_1 = 0x00`)
 * Reads raw accelerometer and gyro registers
-* No scaling/filtering yet
+* Performs complimentary filtering to compensate for drift in gyroscope data and noise in accelerometer data
+
+### Pitch and Roll
+Pitch is the movement of object around horizontal axis i.e. an airplane's nose going up and down.
+Roll is the movement of an object around the vertical axis i.e. an airplane's wings going up and down.
+Only these two are currently considered in the project. Yaw is not being used currently.
+
+### Theory for Complimentary filter
+
+The filter implemented works as a way to complement two filter's transfer function so as to combine them i.e. becoming all pass filter. Gyroscope filtering uses high pass filter to compensate for the drift and Accelerometer filtering uses low pass filter to compensate for the noise.
+
+Tuning weight (Alpha) is used to determine the percentage contribution for each sensor.
+Formula becomes:
+Fused Orientation Angle = Alpha * Gyro Prediction + (1 - Alpha) * Accelerometer angle
+
+Here, 
+* Alpha = Tuning weight
+* Gyro Prediction = Previously Accumulated Angle + Integrated Gryoscope Data
+  * Integrated Gryoscope Data = Gyroscope Anglular velocity * Sampling time interval
+* Accelerometer Angle
+
+Here, we want to stabilize the pitch and roll values and not combine them for now. So, we use the complimentary filter formula separately for both pitch and roll.
+Hence, Formula becomes
+
+Fused Data = Alpha * Accumulated Data + (1 - Alpha) * Current Data
 
 ---
 

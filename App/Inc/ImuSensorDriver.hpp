@@ -46,8 +46,23 @@ public:
   // convert raw sensor data to g and deg/sec for accelerometer and gyrometer
   void convertRawValuesToScaledValues(const ImuDataRaw& aps_DataRaw, ImuDataScaled& aps_DataScaled);
 
-  // calibrate the gyro sensor
-  ImuDataGyroBias calibrateGyro(const uint16_t au16_SampleCount);
+  // Calibrate the gyro sensor
+  ImuDataGyroBias calibrateGyro(const uint16_t au16_SampleCount, const uint8_t au8_TimeInterval);
+
+  // Remove bias from the gyro data
+  void removeGyroBias(ImuDataScaled& as_Data, const ImuDataGyroBias as_GyroBias);
+
+  // Integrate gyro rates into angles
+  void integrateGyro(ImuDataScaled& as_Data, const float af_Dt);
+
+  // Calculate pitch from accelerometer data
+  float calculatePitchFromAccel(const ImuDataScaled& as_Data);
+
+  // Calculate roll from accelerometer data
+  float calculateRollFromAccel(const ImuDataScaled& as_Data);
+  
+  // Apply fiter for compensating gyro drift and accelerometer noise
+  void applyComplimentaryFilter(ImuDataScaled& as_Data, const float af_PitchAcc, const float af_RollAcc);
 
 protected:
   // Writes data to mpu6050 sensor

@@ -39,8 +39,6 @@ extern UART_HandleTypeDef huart2;
 ***************************************************/
 static LoggerTask* gps_LoggerTaskRef = nullptr;
 
-const uint16_t g_LoggerTaskDelay = 60'000u;
-
 /***************************************************
 * Local Helper Functions
 ***************************************************/

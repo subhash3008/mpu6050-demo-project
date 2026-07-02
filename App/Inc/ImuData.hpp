@@ -45,6 +45,9 @@ struct ImuDataScaled
   float f_GxDps; // Gyrometer X-Axis.
   float f_GyDps; // Gyrometer Y-Axis.
   float f_GzDps; // Gyrometer Z-Axis.
+
+  float f_PitchDeg; // for definitions, read readme
+  float f_RollDeg;  // for definitions, read readme
 };
 
 /**
