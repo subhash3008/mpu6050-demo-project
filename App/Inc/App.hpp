@@ -17,6 +17,8 @@
 #include "LogMessage.hpp"
 #include "LoggerDriver.hpp"
 #include "LoggerTask.hpp"
+#include "ComProtocol.hpp"
+#include "ComTask.hpp"
 #include "ImuTask.hpp"
 #include "Queue.hpp"
 #include "ImuSensorDriver.hpp"
@@ -62,6 +64,9 @@ private:
   Queue<LogMessage, 16> ms_LogQueue;  // Message Queue for logging the data over UART
   LoggerDriver ms_Logger; // Driver for handling the incoming logs from tasks
   LoggerTask ms_LoggerTask; // Task to process the log from the message queue
+  Queue<ComProtocol::CommandPacket, ComProtocol::COMMAND_QUEUE_LENGTH> ms_CommandQueue; // Message Queue for handling the commands received
+  ComProtocol ms_ComProtocol;
+  ComTask ms_ComTask; // Task to handle reception and response of the commands 
   ImuSensorDriver ms_Imu; // Driver instance for IMU sensor
   ImuTask ms_ImuTask; // Task to process the data from IMU driver
 };

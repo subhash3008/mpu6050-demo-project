@@ -39,6 +39,7 @@ main.c
 
 * l  -> for local scope
 * g  -> global scope
+* m  -> member scope
 * a  -> arguments
 
 ### Type Specifiers
@@ -47,6 +48,8 @@ main.c
 * f -> float
 * p -> pointer
 * r -> reference
+* s -> struct
+* e -> enum
 
 
 ```code

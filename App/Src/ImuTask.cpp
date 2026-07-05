@@ -51,8 +51,8 @@ static constexpr float gf_ImuTaskDt = 1.0f / gf_ImuRateInHz;
  * @param aps_Logger  Logger reference
  */
 ImuTask::
-ImuTask(ImuSensorDriver& aps_Imu, LoggerDriver& aps_Logger)
-: mps_Imu(aps_Imu), ms_Logger(aps_Logger)
+ImuTask(ImuSensorDriver& aps_Imu, LoggerDriver& aps_Logger, ComProtocol& aps_Com)
+: mps_Imu(aps_Imu), ms_Logger(aps_Logger), ms_Com(aps_Com)
 {}
 
 
@@ -67,37 +67,86 @@ run()
   ImuDataRaw ls_DataRaw;
   ImuDataScaled ls_DataScaled;
 
+  bool lb_StreamSensorData = false;
+
   ms_Logger.info("Performing Gyro calibration.");
   ImuDataGyroBias ls_GyroBias = mps_Imu.calibrateGyro(gu16_CalibrationSampleCount, gu8_CalibrationTimeInterval);
   ms_Logger.info("Gyro calibration complete.");
 
+  ComProtocol::CommandPacket ls_ComPacket;
+
   while(1)
   {
-    if (mps_Imu.readSensorData(ls_DataRaw)) // read the sensor data
+    if (lb_StreamSensorData)
     {
-      mps_Imu.convertRawValuesToScaledValues(ls_DataRaw, ls_DataScaled);  // convert to desired units, g and deg/sec
+      if (mps_Imu.readSensorData(ls_DataRaw)) // read the sensor data
+      {
+        mps_Imu.convertRawValuesToScaledValues(ls_DataRaw, ls_DataScaled);  // convert to desired units, g and deg/sec
 
-      mps_Imu.removeGyroBias(ls_DataScaled, ls_GyroBias); // remove bias from scaled data
+        mps_Imu.removeGyroBias(ls_DataScaled, ls_GyroBias); // remove bias from scaled data
 
-      mps_Imu.integrateGyro(ls_DataScaled, gf_ImuTaskDt);
+        mps_Imu.integrateGyro(ls_DataScaled, gf_ImuTaskDt);
 
-      float lf_PitchAcc = mps_Imu.calculatePitchFromAccel(ls_DataScaled);
-      float lf_RollAcc = mps_Imu.calculateRollFromAccel(ls_DataScaled);
+        float lf_PitchAcc = mps_Imu.calculatePitchFromAccel(ls_DataScaled);
+        float lf_RollAcc = mps_Imu.calculateRollFromAccel(ls_DataScaled);
 
-      mps_Imu.applyComplimentaryFilter(ls_DataScaled, lf_PitchAcc, lf_RollAcc);
+        mps_Imu.applyComplimentaryFilter(ls_DataScaled, lf_PitchAcc, lf_RollAcc);
 
-      // ms_Logger.info(
-      //   "IMU AX=%d, AY=%d, AZ=%d, GX=%d, GY=%d, GZ=%d",
-      //   ls_DataRaw.i16_Ax, ls_DataRaw.i16_Ay, ls_DataRaw.i16_Az,
-      //   ls_DataRaw.i16_Gx, ls_DataRaw.i16_Gy, ls_DataRaw.i16_Gz
-      // );
+        ms_Logger.info(
+          "IMU AX=%.02f, AY=%.02f, AZ=%.02f, GX=%.02f, GY=%.02f, GZ=%.02f, Pitch=%.02f, Roll=%.02f", 
+          ls_DataScaled.f_AxG, ls_DataScaled.f_AyG, ls_DataScaled.f_AzG,
+          ls_DataScaled.f_GxDps, ls_DataScaled.f_GyDps, ls_DataScaled.f_GzDps,
+          ls_DataScaled.f_PitchDeg, ls_DataScaled.f_RollDeg
+        );
+      }
+    }
 
-      ms_Logger.info(
-        "IMU AX=%.02f, AY=%.02f, AZ=%.02f, GX=%.02f, GY=%.02f, GZ=%.02f, Pitch=%.02f, Roll=%.02f", 
-        ls_DataScaled.f_AxG, ls_DataScaled.f_AyG, ls_DataScaled.f_AzG,
-        ls_DataScaled.f_GxDps, ls_DataScaled.f_GyDps, ls_DataScaled.f_GzDps,
-        ls_DataScaled.f_PitchDeg, ls_DataScaled.f_RollDeg
-      );
+    if (ms_Com.getNextCommand(ls_ComPacket))
+    {
+      switch (ls_ComPacket.command)
+      {
+        case ComProtocol::Command::GET_STATUS:
+          ms_Com.processResponse(ComProtocol::Response::STATUS, NULL, 0);
+          ms_Logger.info("Received command: Get status.");
+          break;
+        
+        case ComProtocol::Command::GET_ORIENTATION:
+          if (mps_Imu.readSensorData(ls_DataRaw)) // read the sensor data
+          {
+            ms_Com.processResponse(ComProtocol::Response::ORIENTATION, NULL, 0);
+
+            mps_Imu.convertRawValuesToScaledValues(ls_DataRaw, ls_DataScaled);  // convert to desired units, g and deg/sec
+
+            mps_Imu.removeGyroBias(ls_DataScaled, ls_GyroBias); // remove bias from scaled data
+
+            mps_Imu.integrateGyro(ls_DataScaled, gf_ImuTaskDt);
+
+            float lf_PitchAcc = mps_Imu.calculatePitchFromAccel(ls_DataScaled);
+            float lf_RollAcc = mps_Imu.calculateRollFromAccel(ls_DataScaled);
+
+            mps_Imu.applyComplimentaryFilter(ls_DataScaled, lf_PitchAcc, lf_RollAcc);
+
+            ms_Logger.info(
+              "Orientation : Pitch=%.02f, Roll=%.02f",
+              ls_DataScaled.f_PitchDeg, ls_DataScaled.f_RollDeg
+            );
+          }
+          break;
+        
+        case ComProtocol::Command::START_STREAM:
+          lb_StreamSensorData = true;
+          ms_Com.processResponse(ComProtocol::Response::ACK, NULL, 0);
+          ms_Logger.info("Starting sensor data stream.");
+          break;
+        
+        case ComProtocol::Command::STOP_STREAM:
+          lb_StreamSensorData = false;
+          ms_Com.processResponse(ComProtocol::Response::ACK, NULL, 0);
+          ms_Logger.info("Stopped streaming.");
+          break;
+        default:
+          ms_Logger.error("Invalid command !!");
+      }
     }
 
     vTaskDelayUntil(&lu_LastWake, gu16_ImuTaskDelay);

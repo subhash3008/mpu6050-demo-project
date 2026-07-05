@@ -53,8 +53,11 @@ Application()
 	ms_LogQueue(),
 	ms_Logger(ms_LogQueue),
 	ms_LoggerTask(ms_LogQueue),
+	ms_CommandQueue(),
+	ms_ComProtocol(ms_CommandQueue),
+	ms_ComTask(ms_ComProtocol, ms_Logger),
 	ms_Imu(hi2c1),
-	ms_ImuTask(ms_Imu, ms_Logger)
+	ms_ImuTask(ms_Imu, ms_Logger, ms_ComProtocol)
 {}
 
 /**
@@ -146,8 +149,10 @@ startTasks()
 {
 	ms_Logger.info("Starting system.");
 	ms_ImuTask.start("IMU", 512, 3); // Highest priority for IMU task
+	ms_ComTask.start("COM", 512, 3);
 	ms_BlinkTask.start("BLINK", 256, 2);
 	ms_LoggerTask.start("LOGGER", 512, 1);
+	ms_Logger.info("Awaiting command.");
 }
 
 /**
