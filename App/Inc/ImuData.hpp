@@ -60,6 +60,10 @@ struct ImuDataGyroBias
   float f_GxBias;
   float f_GyBias;
   float f_GzBias;
+
+  float f_AxBias;
+  float f_AyBias;
+  float f_AzBias;
 };
 
 #endif // IMUDATA_HPP

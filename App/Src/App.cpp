@@ -57,7 +57,8 @@ Application()
 	ms_ComProtocol(ms_CommandQueue),
 	ms_ComTask(ms_ComProtocol, ms_Logger),
 	ms_Imu(hi2c1),
-	ms_ImuTask(ms_Imu, ms_Logger, ms_ComProtocol)
+	ms_MotionDetector(),
+	ms_ImuTask(ms_Imu, ms_Logger, ms_ComProtocol, ms_MotionDetector)
 {}
 
 /**
@@ -148,7 +149,7 @@ void Application::
 startTasks()
 {
 	ms_Logger.info("Starting system.");
-	ms_ImuTask.start("IMU", 512, 3); // Highest priority for IMU task
+	ms_ImuTask.start("IMU", 1024, 3); // Highest priority for IMU task
 	ms_ComTask.start("COM", 512, 3);
 	ms_BlinkTask.start("BLINK", 256, 2);
 	ms_LoggerTask.start("LOGGER", 512, 1);

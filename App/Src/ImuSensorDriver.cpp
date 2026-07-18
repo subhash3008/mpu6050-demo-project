@@ -159,7 +159,7 @@ readSensorData(ImuDataRaw& aps_Data)
   // Format the raw bytes to ImuData structure
   aps_Data.i16_Ax = to16(lu8_RawData[0], lu8_RawData[1]);
   aps_Data.i16_Ay = to16(lu8_RawData[2], lu8_RawData[3]);
-  aps_Data.i16_Ay = to16(lu8_RawData[4], lu8_RawData[5]);
+  aps_Data.i16_Az = to16(lu8_RawData[4], lu8_RawData[5]);
 
   aps_Data.i16_Gx = to16(lu8_RawData[8], lu8_RawData[9]);
   aps_Data.i16_Gy = to16(lu8_RawData[10], lu8_RawData[11]);
@@ -202,11 +202,17 @@ convertRawValuesToScaledValues(const ImuDataRaw& aps_DataRaw, ImuDataScaled& aps
 ImuDataGyroBias ImuSensorDriver::
 calibrateGyro(const uint16_t au16_SampleCount, const uint8_t au8_TimeInterval)
 {
+
+  HAL_Delay(1000u); // Allow for sensor stabilization
+
   ImuDataRaw ls_Data;
   ImuDataGyroBias ls_Bias;
   int32_t li32_GxAggregate = 0u;
   int32_t li32_GyAggregate = 0u;
   int32_t li32_GzAggregate = 0u;
+  int32_t li32_AxAggregate = 0u;
+  int32_t li32_AyAggregate = 0u;
+  int32_t li32_AzAggregate = 0u;
   uint16_t counter; // Used in bias calculation, in case if the read is not successfull 100% of the time
 
   // Aggregate gyro data
@@ -217,6 +223,11 @@ calibrateGyro(const uint16_t au16_SampleCount, const uint8_t au8_TimeInterval)
       li32_GxAggregate += ls_Data.i16_Gx;
       li32_GyAggregate += ls_Data.i16_Gy;
       li32_GzAggregate += ls_Data.i16_Gz;
+
+      li32_AxAggregate += ls_Data.i16_Ax;
+      li32_AyAggregate += ls_Data.i16_Ay;
+      li32_AzAggregate += (ls_Data.i16_Az - (int16_t)ACC_SCALE_2G);
+
     }
     HAL_Delay(au8_TimeInterval);
   }
@@ -225,6 +236,10 @@ calibrateGyro(const uint16_t au16_SampleCount, const uint8_t au8_TimeInterval)
   ls_Bias.f_GxBias = (static_cast<float>(li32_GxAggregate) / static_cast<float>(counter)) / GYRO_SCALE_250;
   ls_Bias.f_GyBias = (static_cast<float>(li32_GyAggregate) / static_cast<float>(counter)) / GYRO_SCALE_250;
   ls_Bias.f_GzBias = (static_cast<float>(li32_GzAggregate) / static_cast<float>(counter)) / GYRO_SCALE_250;
+
+  ls_Bias.f_AxBias = (static_cast<float>(li32_AxAggregate) / static_cast<float>(counter)) / ACC_SCALE_2G;
+  ls_Bias.f_AyBias = (static_cast<float>(li32_AyAggregate) / static_cast<float>(counter)) / ACC_SCALE_2G;
+  ls_Bias.f_AzBias = (static_cast<float>(li32_AzAggregate) / static_cast<float>(counter)) / ACC_SCALE_2G;
 
   return ls_Bias;
 
@@ -243,6 +258,10 @@ removeGyroBias(ImuDataScaled& as_Data, const ImuDataGyroBias as_GyroBias)
   as_Data.f_GxDps -= as_GyroBias.f_GxBias;
   as_Data.f_GyDps -= as_GyroBias.f_GyBias;
   as_Data.f_GzDps -= as_GyroBias.f_GzBias;
+
+  as_Data.f_AxG -= as_GyroBias.f_AxBias;
+  as_Data.f_AyG -= as_GyroBias.f_AyBias;
+  as_Data.f_AzG -= as_GyroBias.f_AzBias;
 }
 
 /**

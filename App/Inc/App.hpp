@@ -18,6 +18,7 @@
 #include "LoggerDriver.hpp"
 #include "LoggerTask.hpp"
 #include "ComProtocol.hpp"
+#include "MotionDetector.hpp"
 #include "ComTask.hpp"
 #include "ImuTask.hpp"
 #include "Queue.hpp"
@@ -67,6 +68,7 @@ private:
   Queue<ComProtocol::CommandPacket, ComProtocol::COMMAND_QUEUE_LENGTH> ms_CommandQueue; // Message Queue for handling the commands received
   ComProtocol ms_ComProtocol;
   ComTask ms_ComTask; // Task to handle reception and response of the commands 
+  MotionDetector ms_MotionDetector; // Class to handle detection of any motion
   ImuSensorDriver ms_Imu; // Driver instance for IMU sensor
   ImuTask ms_ImuTask; // Task to process the data from IMU driver
 };
