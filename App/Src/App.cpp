@@ -15,6 +15,8 @@
 #include <stdint.h>
 #include "App.hpp"
 
+#include "FaultManager.hpp"
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -37,6 +39,38 @@ extern I2C_HandleTypeDef hi2c1;
 ***************************************************/
 const uint16_t g_SafeModeDelay = 150U;
 
+bool g_TriggerFault = false;
+
+static constexpr uint8_t IMU_SENSOR_ID = 0x68U;
+
+/***************************************************
+* Helper Functions
+***************************************************/
+
+/**
+ * @brief Handle the initialization and logging of any previous faults
+ */
+void initializeCheckFaultManager(LoggerDriver& as_Logger)
+{
+	FaultManager::init();
+
+	if (FaultManager::hasFault())
+	{
+		as_Logger.info("\r\n");
+		as_Logger.info("Previous Crash Detected!!!\r\n");
+
+		as_Logger.info("Type  : %s\r\n", FaultManager::getFaultTypeString());
+		as_Logger.info("PC    : %08lX\r\n", FaultManager::getPc());
+		as_Logger.info("LR    : %08lX\r\n", FaultManager::getLr());
+		as_Logger.info("CFSR  : %08lX\r\n", FaultManager::getCfsr());
+		as_Logger.info("HFSR  : %08lX\r\n", FaultManager::getHfsr());
+		as_Logger.info("BFAR  : %08lX\r\n", FaultManager::getBfar());
+		as_Logger.info("MMFAR : %08lX\r\n", FaultManager::getMmfar());
+
+		FaultManager::clear();
+	}
+}
+
 /***************************************************
 * Member Functions
 ***************************************************/
@@ -56,8 +90,8 @@ Application()
 	ms_CommandQueue(),
 	ms_ComProtocol(ms_CommandQueue),
 	ms_ComTask(ms_ComProtocol, ms_Logger),
-	ms_Imu(hi2c1),
 	ms_MotionDetector(),
+	ms_Imu(hi2c1),
 	ms_ImuTask(ms_Imu, ms_Logger, ms_ComProtocol, ms_MotionDetector)
 {}
 
@@ -116,7 +150,7 @@ runDiagnostics()
 		ms_Logger.error("Communication to sensor failed.");
 		ok = false;
 	}
-	else if (0x68 != lu8_Id)
+	else if (IMU_SENSOR_ID != lu8_Id)
 	{
 		ms_Logger.error("Wrong device or address issue.");
 		ok = false;
@@ -129,7 +163,10 @@ runDiagnostics()
 		ImuDataRaw ls_Data{};
 		ok = ms_Imu.readSensorData(ls_Data);
 	}
-	
+
+	// Check for any previous faults
+	initializeCheckFaultManager(ms_Logger);
+
 	// TODO: Check if watchdog reset is present
 
 	return ok;
@@ -163,6 +200,12 @@ void Application::
 enterNormalMode()
 {
 	ms_Led.on();
+
+	if (g_TriggerFault) /* TEST for hardfault TODO: remove after testing complete */
+	{
+		volatile uint32_t* ptr = reinterpret_cast<uint32_t*>(0xFFFFFFFF);
+		*ptr = 123;
+	}
 }
 
 /**
