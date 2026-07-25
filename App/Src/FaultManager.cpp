@@ -13,6 +13,7 @@
 * INCLUDES
 ***************************************************/
 #include "FaultManager.hpp"
+#include <cstring>
 
 #ifdef __cplusplus
 extern "C"
@@ -23,6 +24,9 @@ extern "C"
 #include "stm32f446xx.h"
 #include "cmsis_gcc.h"
 
+#include "FreeRTOS.h"
+#include "task.h"
+
 #ifdef __cplusplus
 }
 #endif
@@ -31,12 +35,32 @@ extern "C"
 * Global variables and definitions
 ***************************************************/
 
+static constexpr uint32_t gu32_MagicValue = 0xDEADBEEF;
+
 namespace
 {
   __attribute__((section(".noinit"), used))
   volatile CrashInfo g_CrashInfo;
 }
 
+/***************************************************
+* Helper Functions
+***************************************************/
+/**
+ * @brief Checks if there was caused a watchdog reset
+ * @param None
+ * @return None
+ */
+bool handleIfWatchdogReset(CrashInfo& as_CrashInfo)
+{
+  uint32_t lu32_ResetFlags = RCC->CSR;
+
+  if (lu32_ResetFlags & RCC_CSR_IWDGRSTF)
+  {
+    as_CrashInfo.u32_Magic = gu32_MagicValue;
+    as_CrashInfo.e_FaultType = FaultType::WATCHDOG_FAULT;
+  }
+}
 
 
 /***************************************************
@@ -52,7 +76,8 @@ Storage()
 void FaultManager::
 init()
 {
-  if (hasFault())
+  if (hasFault() ||
+      handleIfWatchdogReset(Storage()))
   {
     Storage().u32_ResetCounter++;
   }
@@ -61,7 +86,7 @@ init()
 bool FaultManager::
 hasFault()
 {
-  return (Storage().u32_Magic == mu32_MagicValue);
+  return (Storage().u32_Magic == gu32_MagicValue);
 }
 
 void FaultManager::
@@ -93,6 +118,12 @@ getFaultTypeString()
     default:
       return "None";
   }
+}
+
+const char* FaultManager::
+getFaultTaskName()
+{
+  return Storage().s_FailedTaskName;
 }
 
 uint32_t FaultManager::
@@ -138,7 +169,7 @@ assertFailed(const char* apc_File, uint32_t au32_Line)
 
   CrashInfo& ls_Crash = Storage();
 
-  ls_Crash.u32_Magic = mu32_MagicValue;
+  ls_Crash.u32_Magic = gu32_MagicValue;
   ls_Crash.e_FaultType = FaultType::ASSERT_FAULT;
   ls_Crash.u32_Line = au32_Line;
 
@@ -153,11 +184,31 @@ assertFailed(const char* apc_File, uint32_t au32_Line)
 }
 
 void FaultManager::
+storeStackOverflow(char* as_TaskName)
+{
+  CrashInfo& ls_Crash = Storage();
+
+  ls_Crash.u32_Magic = gu32_MagicValue;
+  ls_Crash.e_FaultType = FaultType::STACKOVERFLOW_FAULT;
+  strncpy(ls_Crash.s_FailedTaskName, as_TaskName, sizeof(ls_Crash.s_FailedTaskName) - 1);
+}
+
+void FaultManager::
+storeWatchdogFailure(const char* as_TaskName)
+{
+  CrashInfo& ls_Crash = Storage();
+
+  ls_Crash.u32_Magic = gu32_MagicValue;
+  ls_Crash.e_FaultType = FaultType::WATCHDOG_FAULT;
+  strncpy(ls_Crash.s_FailedTaskName, as_TaskName, sizeof(ls_Crash.s_FailedTaskName) - 1);
+}
+
+void FaultManager::
 processHardFault(uint32_t* apu32_StackFrame)
 {
   CrashInfo& ls_Crash = Storage();
 
-  ls_Crash.u32_Magic = mu32_MagicValue;
+  ls_Crash.u32_Magic = gu32_MagicValue;
   ls_Crash.e_FaultType = FaultType::HARD_FAULT;
 
   ls_Crash.u32_R0 = apu32_StackFrame[0];
@@ -209,6 +260,20 @@ void HardFault_Handler(void)
 void HardFault_C(uint32_t* stackFrame)
 {
   FaultManager::processHardFault(stackFrame);
+}
+
+/**
+ * @brief Hook triggered when stack overflow occurs
+ * 
+ */
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char* pcTaskName)
+{
+  FaultManager::storeStackOverflow(pcTaskName);
+
+  NVIC_SystemReset();
+
+  while (true)
+  {}
 }
 
 #ifdef __cplusplus

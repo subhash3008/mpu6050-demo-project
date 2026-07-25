@@ -44,6 +44,8 @@ struct CrashInfo
   uint32_t u32_Mmfar; // Memory Management Fault Address Register, contains address causing mpu fault
   uint32_t u32_Bfar;  // Bus Fault Address Register, contains faulting memory address
 
+  char s_FailedTaskName[16]; // Name of the task which overflowed or triggered the watchdog
+
   uint32_t u32_Line;
 };
 
@@ -59,6 +61,7 @@ public:
 
   static FaultType getFaultType();
   static const char* getFaultTypeString();
+  static const char* getFaultTaskName();
 
   static uint32_t getPc();
   static uint32_t getLr();
@@ -71,9 +74,11 @@ public:
 
   static void processHardFault(uint32_t* apu32_StackFrame);
 
-private:
-  static constexpr uint32_t mu32_MagicValue = 0xDEADBEEF;
+  static void storeStackOverflow(char* as_TaskName);
 
+  static void storeWatchdogFailure(const char* as_TaskName);
+
+private:
   static CrashInfo& Storage();
 };
 

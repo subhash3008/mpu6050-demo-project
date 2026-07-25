@@ -13,6 +13,7 @@
 * INCLUDES
 ***************************************************/
 #include "ImuTask.hpp"
+#include "WatchdogManager.hpp"
 
 /***************************************************
 * CONSTANTS
@@ -63,7 +64,7 @@ ImuTask(ImuSensorDriver& aps_Imu, LoggerDriver& aps_Logger, ComProtocol& aps_Com
 void ImuTask::
 run()
 {
-  TickType_t lu_LastWake = xTaskGetTickCount();
+  TickType_t lu32_LastWake = xTaskGetTickCount();
   ImuDataRaw ls_DataRaw = { 0 };
   ImuDataScaled ls_DataScaled = { 0 };
 
@@ -74,6 +75,8 @@ run()
   ms_Logger.info("Gyro calibration complete.");
 
   ComProtocol::CommandPacket ls_ComPacket;
+
+  WatchdogManager::registerTask(WatchdogManager::TaskId::IMU_TASK);
 
   while(1)
   {
@@ -179,6 +182,7 @@ run()
       }
     }
 
-    vTaskDelayUntil(&lu_LastWake, gu16_ImuTaskDelay);
+    WatchdogManager::alive(WatchdogManager::TaskId::IMU_TASK);
+    vTaskDelayUntil(&lu32_LastWake, gu16_ImuTaskDelay);
   }
 }

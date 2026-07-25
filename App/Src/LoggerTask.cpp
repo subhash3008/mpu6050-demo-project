@@ -16,6 +16,7 @@
 #include <cstring>
 #include <cstdio>
 #include <stdint.h>
+#include "WatchdogManager.hpp"
 
 #ifdef __cplusplus
 extern "C"
@@ -35,9 +36,14 @@ extern UART_HandleTypeDef huart2;
 #endif
 
 /***************************************************
-* Private Variables
+* Private member Variables
 ***************************************************/
 static LoggerTask* gps_LoggerTaskRef = nullptr;
+
+/***************************************************
+* Global Variables
+***************************************************/
+constexpr uint32_t gu32_LoggerTaskDelay = 10U;
 
 /***************************************************
 * Local Helper Functions
@@ -88,9 +94,11 @@ run()
 
   LogMessage ls_Msg;
 
+  WatchdogManager::registerTask(WatchdogManager::TaskId::LOGGER_TASK);
+
   while (1)
   {
-    if (ms_Queue.receive(ls_Msg))
+    if (ms_Queue.receive(ls_Msg, 0))
     {
       while (mb_Busy) // Keep the task busy if a message is being processed
       {
@@ -115,6 +123,10 @@ run()
         li_MsgSize
       );
     }
+
+    WatchdogManager::alive(WatchdogManager::TaskId::LOGGER_TASK);
+
+    vTaskDelay(pdMS_TO_TICKS(gu32_LoggerTaskDelay));
   }
 }
 

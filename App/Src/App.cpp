@@ -60,12 +60,22 @@ void initializeCheckFaultManager(LoggerDriver& as_Logger)
 		as_Logger.info("Previous Crash Detected!!!\r\n");
 
 		as_Logger.info("Type  : %s\r\n", FaultManager::getFaultTypeString());
-		as_Logger.info("PC    : %08lX\r\n", FaultManager::getPc());
-		as_Logger.info("LR    : %08lX\r\n", FaultManager::getLr());
-		as_Logger.info("CFSR  : %08lX\r\n", FaultManager::getCfsr());
-		as_Logger.info("HFSR  : %08lX\r\n", FaultManager::getHfsr());
-		as_Logger.info("BFAR  : %08lX\r\n", FaultManager::getBfar());
-		as_Logger.info("MMFAR : %08lX\r\n", FaultManager::getMmfar());
+
+		switch (FaultManager::getFaultType())
+		{
+			case FaultType::HARD_FAULT:
+				as_Logger.info("PC    : %08lX\r\n", FaultManager::getPc());
+				as_Logger.info("LR    : %08lX\r\n", FaultManager::getLr());
+				as_Logger.info("CFSR  : %08lX\r\n", FaultManager::getCfsr());
+				as_Logger.info("HFSR  : %08lX\r\n", FaultManager::getHfsr());
+				as_Logger.info("BFAR  : %08lX\r\n", FaultManager::getBfar());
+				as_Logger.info("MMFAR : %08lX\r\n", FaultManager::getMmfar());
+				break;
+			case FaultType::WATCHDOG_FAULT:
+			case FaultType::STACKOVERFLOW_FAULT:
+				as_Logger.info("Task  : %s\r\n", FaultManager::getFaultTaskName());
+		}
+
 
 		FaultManager::clear();
 	}
@@ -92,7 +102,8 @@ Application()
 	ms_ComTask(ms_ComProtocol, ms_Logger),
 	ms_MotionDetector(),
 	ms_Imu(hi2c1),
-	ms_ImuTask(ms_Imu, ms_Logger, ms_ComProtocol, ms_MotionDetector)
+	ms_ImuTask(ms_Imu, ms_Logger, ms_ComProtocol, ms_MotionDetector),
+	ms_WatchdogTask()
 {}
 
 /**
@@ -186,10 +197,11 @@ void Application::
 startTasks()
 {
 	ms_Logger.info("Starting system.");
-	ms_ImuTask.start("IMU", 1024, 3); // Highest priority for IMU task
+	ms_WatchdogTask.start("Watchdog", 256, 4);
+	ms_ImuTask.start("IMU", 1024, 4); // Highest priority for IMU task
 	ms_ComTask.start("COM", 512, 3);
-	ms_BlinkTask.start("BLINK", 256, 2);
-	ms_LoggerTask.start("LOGGER", 512, 1);
+	ms_BlinkTask.start("BLINK", 256, 3);
+	ms_LoggerTask.start("LOGGER", 512, 3);
 	ms_Logger.info("Awaiting command.");
 }
 

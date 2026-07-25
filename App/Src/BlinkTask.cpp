@@ -13,6 +13,7 @@
 * INCLUDES
 ***************************************************/
 #include "BlinkTask.hpp"
+#include "WatchdogManager.hpp"
 
 /***************************************************
 * Private Variables
@@ -42,9 +43,14 @@ run()
 {
   TickType_t ls_LastWakeTime = xTaskGetTickCount();
   TickType_t ls_Period = pdMS_TO_TICKS(gu16_TimeToToggle);
+
+  WatchdogManager::registerTask(WatchdogManager::TaskId::BLINK_TASK);
+
   while(1)
   {
     mrs_Led.toggle();
+
+    WatchdogManager::alive(WatchdogManager::TaskId::BLINK_TASK);
     vTaskDelayUntil(&ls_LastWakeTime, ls_Period);
   }
 }

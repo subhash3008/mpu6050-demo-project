@@ -23,6 +23,7 @@
 #include "ImuTask.hpp"
 #include "Queue.hpp"
 #include "ImuSensorDriver.hpp"
+#include "WatchdogTask.hpp"
 
 /**
  * @brief Application Class is the overarching class for implementing
@@ -71,6 +72,7 @@ private:
   MotionDetector ms_MotionDetector; // Class to handle detection of any motion
   ImuSensorDriver ms_Imu; // Driver instance for IMU sensor
   ImuTask ms_ImuTask; // Task to process the data from IMU driver
+  WatchdogTask ms_WatchdogTask; // Task for handling watchdog trigger
 };
 
 

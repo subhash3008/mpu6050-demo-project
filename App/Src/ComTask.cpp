@@ -16,6 +16,7 @@
 #include <cstring>
 #include <cstdio>
 #include <stdint.h>
+#include "WatchdogManager.hpp"
 
 #ifdef __cplusplus
 extern "C"
@@ -73,6 +74,9 @@ run()
 {
   const TickType_t lu8_TaskDelay = 5u; // in ms
   HAL_UART_Receive_IT(&huart2, &gu8_RxByte, 1); // Await reception of the byte
+
+  WatchdogManager::registerTask(WatchdogManager::TaskId::COM_TASK);
+
   while (1)
   {
     ms_Com.process();
@@ -83,6 +87,7 @@ run()
       ms_Com.resetResp();
     }
 
+    WatchdogManager::alive(WatchdogManager::TaskId::COM_TASK);
     vTaskDelay(pdMS_TO_TICKS(lu8_TaskDelay));
   }
 }

@@ -27,20 +27,25 @@ public:
     COUNT
   };
 
+  struct TaskStatus
+  {
+    bool b_Registered;
+    uint32_t u32_TimeoutMs;
+    uint32_t u32_LastAliveTick;
+  };
+
   static void init();
 
   static void alive(TaskId ae_Id);
 
   static void process();
 
-private:
-  struct TaskStatus
-  {
-    uint32_t u32_TimeoutMs;
-    uint32_t u32_LastAliveTick;
-  };
+  static void registerTask(TaskId ae_Id);
 
+private:
   static TaskStatus ms_Tasks[static_cast<uint8_t>(TaskId::COUNT)];
+
+  static bool mb_StartupFinished;
 };
 
 #endif // WATCHDOG_MANAGER_HPP
